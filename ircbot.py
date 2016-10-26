@@ -1,10 +1,12 @@
 # twisted imports
 from twisted.words.protocols import irc
-from twisted.internet import reactor, protocol
+from twisted.internet import reactor, protocol, threads
 from twisted.python import log
 
 # system imports
-import time, sys
+import time, sys, ConfigParser
+
+# custom imports
 
 
 class MessageLogger:
@@ -19,17 +21,26 @@ class MessageLogger:
     def close(self):
         self.file.close()
 
+def TestMethod(bot):
+    import time
+    while True:
+        bot.threadSafeMsg("CHANNEL", "Just testing this loopy loop")
+        time.sleep(5)
 
-class LogBot(irc.IRCClient):
+class EnnaOP(irc.IRCClient):
     nickname = "Enna_OP"
-    username = ""    # Load this from config file probably
-    password = ""  # Load this from config file probably
+
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
         self.logger = MessageLogger(open(self.factory.filename, "a"))
         self.logger.log("[connected at %s]" % 
                         time.asctime(time.localtime(time.time())))
+        # TODO Start luup
+        threads.deferToThread(TestMethod, self)
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
@@ -41,7 +52,7 @@ class LogBot(irc.IRCClient):
 
     def signedOn(self):
         """Called when bot has succesfully signed on to server."""
-        self.join(self.factory.channel)
+        # self.join(self.factory.channel)
 
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
@@ -64,17 +75,22 @@ class LogBot(irc.IRCClient):
             self.msg(channel, msg)
             self.logger.log("<%s> %s" % (self.nickname, msg))
 
-class LogBotFactory(protocol.ClientFactory):
+    def threadSafeMsg(self, channel, message):
+        reactor.callFromThread(self.msg, channel, message)
+
+class BotFactory(protocol.ClientFactory):
     """
-    A factory for LogBots.
+    A factory for Bots.
     A new protocol instance will be created each time we connect to the server.
     """
 
-    def __init__(self):
+    def __init__(self, username, password):
         self.filename = "logfile.txt"
+        self.username = username
+        self.password = password
 
     def buildProtocol(self, addr):
-        p = LogBot()
+        p = EnnaOP(self.username, self.password)
         p.factory = self
         return p
 
@@ -88,8 +104,17 @@ class LogBotFactory(protocol.ClientFactory):
 
 
 if __name__ == '__main__':
+    # Read config file
+    config = ConfigParser.RawConfigParser()
+    config.read('conf.config')
+
+    server_ip = config.get('server', 'ip')
+    server_port = config.getint('server', 'port')
+    server_username = config.get('server', 'username')
+    server_password = config.get('server', 'password')
+
     log.startLogging(sys.stdout)
     
-    f = LogBotFactory()
-    reactor.connectTCP("", 9999, f) # Read from config file
+    f = BotFactory(server_username, server_password)
+    reactor.connectTCP(server_ip, server_port, f)
     reactor.run()
