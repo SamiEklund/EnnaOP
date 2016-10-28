@@ -1,24 +1,5 @@
 import feedparser
 
-# TODO At startup load current manga chapters from file
-
-mangaStatuses = {"One Piece": "EMPTY", "Hajime No Ippo": "EMPTY"}
-
-def checkMangastream():
-   rss_url = "http://mangastream.com/rss"
-   feed = feedparser.parse(rss_url)
-   items = feed["items"]
-   for item in items:
-       title = item["title"]
-       for manga in mangaStatuses:
-            if manga.lower() in title.lower():
-                print "We follow this manga! Last chapter was: " + mangaStatuses[manga]
-                if mangaStatuses[manga].lower() is title.lower():
-                    print title + " is out! Doublecaster Anna_OP"
-                    mangaStatuses[manga] = title
-                else:
-                    print "This wasn't a new release..."
-
 def saveMangaStatuses():
     file = open("mangalog.txt", "w")
     for manga in mangaStatuses:
@@ -32,6 +13,52 @@ def loadMangaStatuses():
         mangaStatuses[splitLine[0]] = splitLine[1]
     file.close() 
 
-loadMangaStatuses()
-checkMangastream()
-saveMangaStatuses()
+class Manga:
+    def __init__(self, name, chapterNumber, chapterTitle, chapterLink, publishedDate):
+        self.name = name
+        self.chapterNumber = chapterNumber
+        self.chapterTitle = chapterTitle
+        self.publishedDate = publishedDate
+        self.chapterLink = chapterLink
+
+    def toString(self):
+        return self.name + " No. " + str(self.chapterNumber) + " - " + self.chapterTitle + " | " + self.publishedDate
+
+class MangaParser:
+    mangaList = None
+
+    def __init__(self):
+        mangas = self.parseMangastream()
+        for manga in mangas:
+            print(manga.toString())
+
+    def parseMangastream(self):
+        feed = feedparser.parse("http://mangastream.com/rss")
+        items = feed["items"]
+        feedMangas = []
+
+        for item in items:
+            chapterTitle = item.description
+            publishedDate = item.published
+            chapterLink = item.link
+            chapterNumber = None
+            mangaName = None
+
+            # Get chapter number and manga name from title
+            title = item.title
+            titleInParts = title.split(" ")
+            chapterNumber = titleInParts[len(titleInParts)-1]
+            del titleInParts[len(titleInParts)-1]
+            mangaName = " ".join(titleInParts)
+
+            try:
+                chapterNumber = int(chapterNumber)
+            except:
+                print("Entry " + mangaName + " has no chapter number! Skipping it!")
+                continue
+
+            feedMangas.append(Manga(mangaName, chapterNumber, chapterTitle, chapterLink, publishedDate))
+
+        return feedMangas
+
+MangaParser()
