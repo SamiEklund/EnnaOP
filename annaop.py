@@ -2,19 +2,19 @@
 import feedparser, jsonpickle
 
 class Manga:
-    def __init__(self, mangaName, chapterNumber, chapterTitle, chapterLink, publishedDate):
+    def __init__(self, mangaName, chapterNumber, chapterTitle, chapterLink, publishedDate, followers=None):
         self.mangaName = mangaName
         self.chapterNumber = chapterNumber
         self.chapterTitle = chapterTitle
         self.publishedDate = publishedDate
         self.chapterLink = chapterLink
-        self.followers = []
+        self.followers = followers
 
     def setFollowers(self, followers):
         self.followers = followers
 
     def addFollower(self, follower):
-        self.followers += follower
+        self.followers.append(follower)
 
     def toString(self):
         return self.name + " No. " + str(self.chapterNumber) + " - " + self.chapterTitle + " | " + self.publishedDate
@@ -69,7 +69,9 @@ class MangaParser:
             except:
                 continue
             if release.chapterNumber > manga.chapterNumber:
+                release.setFollowers(manga.followers)
                 newReleases.append(release)
+                
 
         for release in newReleases:
             manga = self.mangaList[release.mangaName]
