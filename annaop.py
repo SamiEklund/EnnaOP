@@ -1,4 +1,4 @@
-import feedparser, json
+import feedparser, jsonpickle
 
 class Manga:
     def __init__(self, mangaName, chapterNumber, chapterTitle, chapterLink, publishedDate):
@@ -18,19 +18,15 @@ class Manga:
     def toString(self):
         return self.name + " No. " + str(self.chapterNumber) + " - " + self.chapterTitle + " | " + self.publishedDate
 
-    def toJSON(self):
-        return json.dumps(self.__dict__, sort_keys = True)
-
 class MangaParser:
     mangaList = None
     mangaFile = "manga.txt"
 
     def __init__(self):
-        # self.mangaList = self.parseMangaStream()
-        # self.loadFromFile()
-        # for manga in self.mangaList:
-        #    print(manga)
-        # self.saveToFile()
+        self.loadFromFile()
+
+        for manga in self.mangaList:
+            print(manga.mangaName)
 
     def parseMangaStream(self):
         feed = feedparser.parse("http://mangastream.com/rss")
@@ -63,15 +59,14 @@ class MangaParser:
     def saveToFile(self):
         file = open(self.mangaFile, "w")
         for manga in self.mangaList:
-            file.write(manga.toJSON() + "\n")
+            file.write(jsonpickle.encode(manga) + "\n")
         file.close()
 
     def loadFromFile(self):
         self.mangaList = []
         file = open(self.mangaFile, "r")
         for line in file:
-            self.mangaList += json.loads(line)
-
+            self.mangaList.append(jsonpickle.decode(line))
         file.close()
 
 
