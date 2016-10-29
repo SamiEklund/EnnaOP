@@ -1,13 +1,15 @@
+# -*- coding: utf-8 -*-
 # twisted imports
 from twisted.words.protocols import irc
-from twisted.internet import reactor, protocol, threads
+from twisted.internet import reactor, protocol, task
 from twisted.python import log
 
 # system imports
 import time, sys, ConfigParser
 
 # custom imports
-
+from annaop import Manga
+from annaop import MangaParser
 
 class MessageLogger:
     def __init__(self, file):
@@ -21,12 +23,6 @@ class MessageLogger:
     def close(self):
         self.file.close()
 
-def TestMethod(bot):
-    import time
-    while True:
-        bot.threadSafeMsg("CHANNEL", "Just testing this loopy loop")
-        time.sleep(5)
-
 class EnnaOP(irc.IRCClient):
     nickname = "Enna_OP"
 
@@ -39,8 +35,9 @@ class EnnaOP(irc.IRCClient):
         self.logger = MessageLogger(open(self.factory.filename, "a"))
         self.logger.log("[connected at %s]" % 
                         time.asctime(time.localtime(time.time())))
-        # TODO Start luup
-        threads.deferToThread(TestMethod, self)
+
+        monitorManga = task.LoopingCall(self.BotLoop)
+        monitorManga.start(60)
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
@@ -77,6 +74,15 @@ class EnnaOP(irc.IRCClient):
 
     def threadSafeMsg(self, channel, message):
         reactor.callFromThread(self.msg, channel, message)
+
+    def BotLoop(self):
+        mangaParser = MangaParser()
+
+        # Check for new releases on MangaStream 
+        releases = mangaParser.checkForNewReleases(mangaParser.parseMangaStream())
+
+        for message in releases:
+            self.msg("#OnePieceCircleJerk", message.encode('utf8'))
 
 class BotFactory(protocol.ClientFactory):
     """

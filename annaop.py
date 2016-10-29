@@ -20,7 +20,7 @@ class Manga:
         return self.name + " No. " + str(self.chapterNumber) + " - " + self.chapterTitle + " | " + self.publishedDate
 
     def getMessage(self):
-        return [self.mangaName + " " + str(self.chapterNumber) + " is out! " + " ".join(self.followers), self.chapterLink]
+        return self.mangaName + " " + str(self.chapterNumber) + " is out! " + " ".join(self.followers) + "\n" + self.chapterLink
 
 class MangaParser:
     mangaList = None
@@ -28,9 +28,6 @@ class MangaParser:
 
     def __init__(self):
         self.loadFromFile()
-        releases = self.checkForNewReleases(self.parseMangaStream())
-        for msg in releases:
-            print(msg[0] + "\n" + msg[1])
 
     def parseMangaStream(self):
         feed = feedparser.parse("http://mangastream.com/rss")
@@ -96,6 +93,3 @@ class MangaParser:
             manga = jsonpickle.decode(line)
             self.mangaList[manga.mangaName] = manga
         file.close()
-
-
-MangaParser()
