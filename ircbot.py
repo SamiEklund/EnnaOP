@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # twisted imports
 from twisted.words.protocols import irc
-from twisted.internet import reactor, protocol, task
+from twisted.internet import reactor, protocol, task, defer
 from twisted.python import log
 
 # system imports
@@ -25,10 +25,16 @@ class MessageLogger:
 
 class EnnaOP(irc.IRCClient):
     nickname = "Enna_OP"
+    channel = "#OnePieceCircleJerk"
+
+    mangaParser = MangaParser()
+
+    commandList = ["subscribe", "unsubscribe"]
 
     def __init__(self, username, password):
         self.username = username
         self.password = password
+        self._namescallback = {}
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
@@ -58,7 +64,6 @@ class EnnaOP(irc.IRCClient):
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
         user = user.split('!', 1)[0]
-        self.logger.log("<%s> %s" % (user, msg))
         
         # Check to see if they're sending me a private message
         if channel == self.nickname:
@@ -68,18 +73,94 @@ class EnnaOP(irc.IRCClient):
 
         # Otherwise check to see if it is a message directed at me
         if msg.startswith(self.nickname + ":"):
-            msg = "%s: I am the bot who will become the next Anna_OP!" % user
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
+            # Check if command is valid before bothering the server
+            for cmd in self.commandList:
+                if cmd in msg.lower():
+                    self.names(self.channel).addCallback(self.commands, user, msg)
+                    break
 
-    def threadSafeMsg(self, channel, message):
-        reactor.callFromThread(self.msg, channel, message)
+    def commands(self, nicklist, user=None, message=None):
+        if not user or not message:
+            return
+
+        message = message.lower()
+        user = user.lower()
+        ircMsg = user + ": "
+
+        userRank = None
+        
+        # Check if user has OP or voice
+        for nick in nicklist:
+            if user in nick.lower():
+                if nick.startswith("@") or nick.startswith("%"):
+                    userRank = "O"
+                elif nick.startswith("+"):
+                    userRank = "V"
+
+        if not userRank:
+            ircMsg += "You need to be voiced to interact with me!"
+            self.msg(self.channel, ircMsg.encode("utf8"))
+            return
+
+        messageParts = message.split(":")[1].split(" ")
+
+        if "subscribe" in messageParts:
+            manga = self.mangaParser.subscribe(message, user)
+            if manga:
+                ircMsg += "I will notify you for " + manga + " releases."
+            else:
+                ircMsg += "You are already following this manga or the manga doesn't exist."
+            self.msg(self.channel, ircMsg.encode("utf8"))
+        elif "unsubscribe" in messageParts:
+            manga = self.mangaParser.unsubscribe(message, user)
+            if manga:
+                ircMsg += "You won't get notified for " + manga + " anymore."
+            else:
+                ircMsg += "You aren't following this or the manga doesn't exist."
+            self.msg (self.channel, ircMsg.encode('utf8'))
+
+
+    def names(self, channel):
+        channel = channel.lower()
+        d = defer.Deferred()
+        if channel not in self._namescallback:
+            self._namescallback[channel] = ([], [])
+
+        self._namescallback[channel][0].append(d)
+        self.sendLine("NAMES %s" % channel)
+        return d
+
+    def irc_RPL_NAMREPLY(self, prefix, params):
+        channel = params[2].lower()
+        nicklist = params[3].split(' ')
+
+        if channel not in self._namescallback:
+            return
+
+        n = self._namescallback[channel][1]
+        n += nicklist
+
+    def irc_RPL_ENDOFNAMES(self, prefix, params):
+        channel = params[1].lower()
+        if channel not in self._namescallback:
+            return
+
+        callbacks, namelist = self._namescallback[channel]
+
+        for cb in callbacks:
+            cb.callback(namelist)
+
+        del self._namescallback[channel]
 
     def BotLoop(self):
-        mangaParser = MangaParser()
-
         # Check for new releases on MangaStream 
-        releases = mangaParser.checkForNewReleases(mangaParser.parseMangaStream())
+        releases = self.mangaParser.checkForNewReleases(self.mangaParser.parseMangaStream())
+
+        print("I CHECKED MANGAS!!! " + " ".join(releases))
+
+        # Check for new releases on Pota.to
+
+        # Check for new releases on /r/Manga
 
         for message in releases:
             self.msg("#OnePieceCircleJerk", message.encode('utf8'))

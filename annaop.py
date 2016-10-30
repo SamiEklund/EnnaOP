@@ -14,7 +14,17 @@ class Manga:
         self.followers = followers
 
     def addFollower(self, follower):
-        self.followers.append(follower)
+        if follower not in self.followers:
+            self.followers.append(follower)
+            return True
+        return False
+
+    def removeFollower(self, follower):
+        if follower in self.followers:
+            self.followers.remove(follower)
+            return True
+        return False
+
 
     def toString(self):
         return self.name + " No. " + str(self.chapterNumber) + " - " + self.chapterTitle + " | " + self.publishedDate
@@ -76,9 +86,25 @@ class MangaParser:
             if manga and release.chapterNumber > manga.chapterNumber:
                 self.mangaList[release.mangaName] = release
         
-        self.saveToFile()
+        if ircMessages:
+            self.saveToFile()
         return ircMessages
+
+    def subscribe(self, message, user):
+        for manga in self.mangaList:
+            if manga.lower() in message:
+                if self.mangaList[manga].addFollower(user):
+                    self.saveToFile()
+                    return manga
+        return None
         
+    def unsubscribe(self, message, user):
+        for manga in self.mangaList:
+            if manga.lower() in message:
+                if self.mangaList[manga].removeFollower(user):
+                    self.saveToFile()
+                    return manga
+        return None
 
     def saveToFile(self):
         file = open(self.mangaFile, "w")
