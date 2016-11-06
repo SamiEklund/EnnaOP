@@ -154,7 +154,7 @@ class EnnaOP(irc.IRCClient):
 
     def BotLoop(self):
         # Check for new releases on MangaStream 
-        releases = self.mangaParser.checkForNewReleases(self.mangaParser.parseMangaStream())
+        releases = self.mangaParser.checkForNewReleases()
 
         print("I CHECKED MANGAS!!! " + " ".join(releases))
 

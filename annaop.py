@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import feedparser, jsonpickle
+import feedparser, jsonpickle, re
 
 class Manga:
-    def __init__(self, mangaName, chapterNumber, chapterTitle, chapterLink, publishedDate, followers=None):
+    def __init__(self, mangaName, chapterNumber, chapterLink, chapterTitle=None, publishedDate=None, followers=None):
         self.mangaName = mangaName
         self.chapterNumber = chapterNumber
         self.chapterTitle = chapterTitle
@@ -25,66 +25,101 @@ class Manga:
             return True
         return False
 
-
     def toString(self):
         return self.name + " No. " + str(self.chapterNumber) + " - " + self.chapterTitle + " | " + self.publishedDate
 
     def getMessage(self):
         return self.mangaName + " " + str(self.chapterNumber) + " is out! " + " ".join(self.followers) + "\n" + self.chapterLink
 
+class DataSource:
+    def __init__(self, source, type, dataMap):
+        self.source = source
+        self.type = type
+        self.dataMap = dataMap
+
+    def getManga(self):
+        if self.type == "rss":
+            data = feedparser.parse(self.source)
+            parsedData = self.parseRSS(data)
+            return parsedData
+        elif self.type == "HTML":
+            print "HTML Parsing not implemented yet"
+            return None
+
+    def parseRSS(self, rss):
+        if not rss:
+            return
+        items = rss["items"]
+        releaseList = []
+        for item in items:
+            mangaValues = {}
+            for mapping in self.dataMap:
+                mangaValues[mapping["dataname"]] = self.parseItem(item[mapping["node"]], mapping["method"], mapping["regex"])
+
+            manga = self.createManga(mangaValues)
+            if manga:
+                 releaseList.append(manga)
+
+        return releaseList
+
+    def parseItem(self, node, method, regex):
+        if method == "regex":
+            reg = re.compile(regex)
+            r =  reg.search(node)
+            if r:
+                return r.group(0)
+            return "REGEXFAILED"
+        else:
+            print "No method recognized :("
+
+    def createManga(self, data):
+        mangaName = data["manganame"] if "manganame" in data else None
+        chapterLink = data["chapterlink"] if "chapterlink" in data else None
+        chapterNumber = data["chapternumber"] if "chapternumber" in data else None
+        try:
+            chapterNumber = float(chapterNumber)
+        except:
+            return None
+
+        if mangaName is None or chapterLink is None or chapterNumber is None:
+            return None
+        
+        publishedDate = data["publisheddate"] if "publisheddate" in data else None
+        chapterTitle = data["chaptertitle"] if "chaptertitle" in data else None
+
+        return Manga(mangaName, chapterNumber, chapterLink, chapterTitle, publishedDate)
+
 class MangaParser:
     mangaList = None
     mangaFile = "manga.txt"
+    sourceList = None
 
     def __init__(self):
         self.loadFromFile()
+        self.loadSources()
 
-    def parseMangaStream(self):
-        feed = feedparser.parse("http://mangastream.com/rss")
-        items = feed["items"]
-        feedMangas = []
-
-        for item in items:
-            chapterTitle = item.description
-            publishedDate = item.published
-            chapterLink = item.link
-            chapterNumber = None
-            mangaName = None
-
-            # Get chapter number and manga name from title
-            title = item.title
-            titleInParts = title.split(" ")
-            chapterNumber = titleInParts[len(titleInParts)-1]
-            del titleInParts[len(titleInParts)-1]
-            mangaName = " ".join(titleInParts)
-
-            try:
-                chapterNumber = int(chapterNumber)
-            except:
-                continue
-
-            feedMangas.append(Manga(mangaName, chapterNumber, chapterTitle, chapterLink, publishedDate))
-        return feedMangas
-
-    def checkForNewReleases(self, releases):
-        newReleases = []
+    def checkForNewReleases(self):
         ircMessages = []
 
-        for release in releases:
-            try:
-                manga = self.mangaList[release.mangaName]
-            except:
+        for source in self.sourceList:
+            newReleases = []
+            releases = source.getManga()
+            if not releases:
                 continue
-            if release.chapterNumber > manga.chapterNumber:
-                release.setFollowers(manga.followers)
-                newReleases.append(release)
-                
+            for release in releases:
+                try:
+                    manga = self.mangaList[release.mangaName]
+                except:
+                    continue
+                if release.chapterNumber > manga.chapterNumber:
+                    release.setFollowers(manga.followers)
+                    newReleases.append(release)
 
-        for release in newReleases:
-            manga = self.mangaList[release.mangaName]
-            ircMessages.append(release.getMessage())
-            if manga and release.chapterNumber > manga.chapterNumber:
-                self.mangaList[release.mangaName] = release
+            for release in newReleases:
+                manga = self.mangaList[release.mangaName]
+                ircMessages.append(release.getMessage())
+                if manga and release.chapterNumber > manga.chapterNumber:
+                    self.mangaList[release.mangaName] = release
         
         if ircMessages:
             self.saveToFile()
@@ -118,4 +153,9 @@ class MangaParser:
         for line in file:
             manga = jsonpickle.decode(line)
             self.mangaList[manga.mangaName] = manga
+        file.close()
+
+    def loadSources(self):
+        file = open("datasources.json", "r")
+        self.sourceList = jsonpickle.decode(file.readline())
         file.close()
