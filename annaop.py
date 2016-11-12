@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import feedparser, jsonpickle, re
+import feedparser, jsonpickle, re, json
 
 class Manga:
     def __init__(self, mangaName, chapterNumber, chapterLink, chapterTitle=None, publishedDate=None, followers=None):
@@ -26,10 +26,20 @@ class Manga:
         return False
 
     def toString(self):
-        return self.name + " No. " + str(self.chapterNumber) + " - " + self.chapterTitle + " | " + self.publishedDate
+        chaptNum = int(self.chapterNumber) if self.chapterNumber.is_integer() else self.chapterNumber
+        return self.name + " No. " + str(chaptNum) + " - " + self.chapterTitle + " | " + self.publishedDate
 
     def getMessage(self):
-        return self.mangaName + " " + str(self.chapterNumber) + " is out! " + " ".join(self.followers) + "\n" + self.chapterLink
+        chaptNum = int(self.chapterNumber) if self.chapterNumber.is_integer() else self.chapterNumber
+        return self.mangaName + " " + str(chaptNum) + " is out! " + " ".join(self.followers) + "\n" + self.chapterLink
+
+    def update(self, newManga):
+        if not newManga or not newManga.chapterTitle or not newManga.chapterNumber:
+            return
+        self.chapterNumber = newManga.chapterNumber
+        self.chapterLink = newManga.chapterLink
+        self.publishedDate = newManga.publishedDate
+        self.chapterTitle = newManga.chapterTitle
 
 class DataSource:
     def __init__(self, source, type, dataMap):
@@ -107,55 +117,54 @@ class MangaParser:
             if not releases:
                 continue
             for release in releases:
-                try:
-                    manga = self.mangaList[release.mangaName]
-                except:
-                    continue
-                if release.chapterNumber > manga.chapterNumber:
+                manga = self.getMangaByTitle(release.mangaName)
+                if manga and release.chapterNumber > manga.chapterNumber:
                     release.setFollowers(manga.followers)
                     newReleases.append(release)
 
             for release in newReleases:
-                manga = self.mangaList[release.mangaName]
                 ircMessages.append(release.getMessage())
+                manga = self.getMangaByTitle(release.mangaName)
                 if manga and release.chapterNumber > manga.chapterNumber:
-                    self.mangaList[release.mangaName] = release
+                    manga.update(release)
         
         if ircMessages:
             self.saveToFile()
         return ircMessages
 
     def subscribe(self, message, user):
-        for manga in self.mangaList:
-            if manga.lower() in message:
-                if self.mangaList[manga].addFollower(user):
-                    self.saveToFile()
-                    return manga
+        manga = self.getMangaByTitle(message)
+        if manga and self.mangaList[manga].addFollower(user):
+            self.saveToFile()
+            return manga
         return None
         
     def unsubscribe(self, message, user):
-        for manga in self.mangaList:
-            if manga.lower() in message:
-                if self.mangaList[manga].removeFollower(user):
-                    self.saveToFile()
-                    return manga
+        manga = self.getMangaByTitle(message)
+        if manga and self.mangaList[manga].removeFollower(user):
+            self.saveToFile()
+            return manga
         return None
+
+    def getMangaByTitle(self, mangaStr):
+        for manga in self.mangaList:
+            if manga.mangaName.lower() in mangaStr.lower():
+                return manga
+        
 
     def saveToFile(self):
         file = open(self.mangaFile, "w")
-        for manga in self.mangaList:
-            file.write(jsonpickle.encode(self.mangaList[manga]) + "\n")
+        jsonData = jsonpickle.encode(self.mangaList)
+        jsonData = json.loads(jsonData)
+        json.dump(jsonData, file, indent=4, sort_keys=True,separators=(',', ':'))
         file.close()
 
     def loadFromFile(self):
-        self.mangaList = {}
         file = open(self.mangaFile, "r")
-        for line in file:
-            manga = jsonpickle.decode(line)
-            self.mangaList[manga.mangaName] = manga
+        self.mangaList = jsonpickle.decode(file.read())
         file.close()
 
     def loadSources(self):
         file = open("datasources.json", "r")
-        self.sourceList = jsonpickle.decode(file.readline())
+        self.sourceList = jsonpickle.decode(file.read())
         file.close()

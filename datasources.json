@@ -1,1 +1,76 @@
-[{"py/object": "__main__.DataSource", "source": "http://mangastream.com/rss", "type": "rss", "dataMap": [{"node": "title", "dataname": "manganame", "method": "regex", "regex": "^.+?(?=(\\s\\d+)(?!.*\\d))"}, {"node": "title", "dataname": "chapternumber", "method": "regex", "regex": "(\\d+)(?!.*\\d)"}, {"node": "link", "dataname": "chapterlink", "method": "regex", "regex": ".*"}, {"node": "published", "dataname": "publishedtime", "method": "regex", "regex": ".*"}, {"node": "description", "dataname": "chaptertitle", "method": "regex", "regex": ".*"}]}, {"py/object": "__main__.DataSource", "source": "http://bato.to/myfollows_rss?secret=a92c38514f26c17c881ff2d15320d939&l=English", "type": "rss", "dataMap": [{"node": "title", "dataname": "manganame", "method": "regex", "regex": "^.+?(?=-)"}, {"node": "title", "dataname": "chapternumber", "method": "regex", "regex": "(?<=(Ch.))[^:]*(?=:)"}, {"node": "link", "dataname": "chapterlink", "method": "regex", "regex": ".*"}, {"node": "published", "dataname": "publishedtime", "method": "regex", "regex": ".*"}, {"node": "title", "dataname": "chaptertitle", "method": "regex", "regex": "(?<=(:)).*$"}]}]
+[
+    {
+        "py/object": "__main__.DataSource",
+        "source": "http://mangastream.com/rss",
+        "type": "rss",
+        "dataMap": [
+            {
+                "node": "title",
+                "dataname": "manganame",
+                "method": "regex",
+                "regex": "^.+?(?=(\\s\\d+)(?!.*\\d))"
+            },
+            {
+                "node": "title",
+                "dataname": "chapternumber",
+                "method": "regex",
+                "regex": "(\\d+)(?!.*\\d)"
+            },
+            {
+                "node": "link",
+                "dataname": "chapterlink",
+                "method": "regex",
+                "regex": ".*"
+            },
+            {
+                "node": "published",
+                "dataname": "publishedtime",
+                "method": "regex",
+                "regex": ".*"
+            },
+            {
+                "node": "description",
+                "dataname": "chaptertitle",
+                "method": "regex",
+                "regex": ".*"
+            }
+        ]
+    },
+    {
+        "py/object": "__main__.DataSource",
+        "source": "http://bato.to/myfollows_rss?secret=a92c38514f26c17c881ff2d15320d939&l=English",
+        "type": "rss",
+        "dataMap": [
+            {
+                "node": "title",
+                "dataname": "manganame",
+                "method": "regex",
+                "regex": "^.+?(?=-)"
+            },
+            {
+                "node": "title",
+                "dataname": "chapternumber",
+                "method": "regex",
+                "regex": "(?<=(Ch.))[^:]*(?=:)"
+            },
+            {
+                "node": "link",
+                "dataname": "chapterlink",
+                "method": "regex",
+                "regex": ".*"
+            },
+            {
+                "node": "published",
+                "dataname": "publishedtime",
+                "method": "regex",
+                "regex": ".*"
+            },
+            {
+                "node": "title",
+                "dataname": "chaptertitle",
+                "method": "regex",
+                "regex": "(?<=(:)).*$"
+            }
+        ]
+    }
+]
