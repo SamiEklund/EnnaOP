@@ -8,8 +8,7 @@ from twisted.python import log
 import time, sys, ConfigParser
 
 # custom imports
-from annaop import Manga
-from annaop import MangaParser
+from annaop import Manga, MangaParser, DataSource
 
 class MessageLogger:
     def __init__(self, file):
@@ -29,7 +28,7 @@ class EnnaOP(irc.IRCClient):
 
     mangaParser = MangaParser()
 
-    commandList = ["subscribe", "unsubscribe"]
+    commandList = ["subscribe", "unsubscribe", "addmanga"]
 
     def __init__(self, username, password):
         self.username = username
@@ -72,7 +71,7 @@ class EnnaOP(irc.IRCClient):
             return
 
         # Otherwise check to see if it is a message directed at me
-        if msg.startswith(self.nickname + ":"):
+        if msg.startswith("!"):
             # Check if command is valid before bothering the server
             for cmd in self.commandList:
                 if cmd in msg.lower():
@@ -102,21 +101,33 @@ class EnnaOP(irc.IRCClient):
             self.msg(self.channel, ircMsg.encode("utf8"))
             return
 
-        messageParts = message.split(":")[1].split(" ")
+        messageParts = message.split(" ")
+        command = messageParts.pop(0)
+        params = " ".join(messageParts)
 
-        if "subscribe" in messageParts:
-            manga = self.mangaParser.subscribe(message, user)
+        if command == "!subscribe":
+            manga = self.mangaParser.subscribe(params, user)
             if manga:
                 ircMsg += "I will notify you for " + manga + " releases."
             else:
                 ircMsg += "You are already following this manga or the manga doesn't exist."
             self.msg(self.channel, ircMsg.encode("utf8"))
-        elif "unsubscribe" in messageParts:
-            manga = self.mangaParser.unsubscribe(message, user)
+        elif command == "!unsubscribe":
+            manga = self.mangaParser.unsubscribe(params, user)
             if manga:
                 ircMsg += "You won't get notified for " + manga + " anymore."
             else:
                 ircMsg += "You aren't following this or the manga doesn't exist."
+            self.msg (self.channel, ircMsg.encode('utf8'))
+        elif command == "!addmanga":
+            if userRank != "O":
+                ircMsg += "You need to be channel operator to user this command.'"
+            else:
+                manga = self.mangaParser.createNewManga(params)
+                if manga:
+                    ircMsg += "I am now following " + manga + "!"
+                else:
+                    ircMsg += "We are already following that manga or some other error!"
             self.msg (self.channel, ircMsg.encode('utf8'))
 
 

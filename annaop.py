@@ -2,7 +2,7 @@
 import feedparser, jsonpickle, re, json
 
 class Manga:
-    def __init__(self, mangaName, chapterNumber, chapterLink, chapterTitle=None, publishedDate=None, followers=None):
+    def __init__(self, mangaName, chapterNumber, chapterLink, chapterTitle=None, publishedDate=None, followers=[]):
         self.mangaName = mangaName
         self.chapterNumber = chapterNumber
         self.chapterTitle = chapterTitle
@@ -101,7 +101,7 @@ class DataSource:
 
 class MangaParser:
     mangaList = None
-    mangaFile = "manga.txt"
+    mangaFile = "manga.json"
     sourceList = None
 
     def __init__(self):
@@ -134,22 +134,35 @@ class MangaParser:
 
     def subscribe(self, message, user):
         manga = self.getMangaByTitle(message)
-        if manga and self.mangaList[manga].addFollower(user):
+        if manga and manga.addFollower(user):
             self.saveToFile()
-            return manga
+            return manga.mangaName
         return None
         
     def unsubscribe(self, message, user):
         manga = self.getMangaByTitle(message)
-        if manga and self.mangaList[manga].removeFollower(user):
+        if manga and manga.removeFollower(user):
             self.saveToFile()
-            return manga
+            return manga.mangaName
         return None
+
+    def createNewManga(self, mangaName):
+        manga = self.getMangaByTitle(mangaName) # FIXME: This wont work here, cant follow Dragon Ball and Dragon Ball Z
+        if manga is None:
+            manga = Manga(mangaName, 0, "nolinkavailable")
+            self.mangaList.append(manga)
+            ircMsgCount = len(self.checkForNewReleases())
+            if ircMsgCount == 0:
+                self.saveToFile()
+            return manga.mangaName
+        else:
+            return None
 
     def getMangaByTitle(self, mangaStr):
         for manga in self.mangaList:
             if manga.mangaName.lower() in mangaStr.lower():
                 return manga
+        return None
         
 
     def saveToFile(self):
