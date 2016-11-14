@@ -8,8 +8,7 @@ from twisted.python import log
 import time, sys, ConfigParser
 
 # custom imports
-from annaop import Manga
-from annaop import MangaParser
+from annaop import Manga, MangaParser, DataSource
 
 class MessageLogger:
     def __init__(self, file):
