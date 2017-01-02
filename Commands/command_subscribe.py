@@ -9,5 +9,6 @@ class Subscribe(Command):
     commandStrings = ["subscribe", "sub", "s+"]
 
     def execute(self, user, params):
-        MangaParser.add_follower_to_manga(params[0], user)
-        return "I did a thing!"
+        if MangaParser.add_follower_to_manga(params[0], user):
+            return "You are now following " + params[0]
+        return "Sorry, something went wrong with Subscribe :("

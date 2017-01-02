@@ -2,12 +2,14 @@
 
 from command import Command
 from command_subscribe import Subscribe
+from command_addmanga import AddManga
 
 class CommandCenter(object):
     """ Master of the commands TODO: Explain better """
 
     commands = [
-        Subscribe()
+        Subscribe(),
+        AddManga()
     ]
 
     COMMAND_PREFIX = "!"

@@ -3,6 +3,8 @@
 import json
 import jsonpickle
 
+from manga import Manga
+
 def load_manga_file():
     """ Reads saved status from JSON file """
     manga_file = open("manga.json", "r")
@@ -31,7 +33,7 @@ class MangaParser(object):
     def get_manga_by_title(manga_title):
         """ Returns manga object by title """
         for manga in MangaParser.manga_list:
-            if manga.mangaName.lower() == manga_title.lower():
+            if manga.manga_name.lower() == manga_title.lower():
                 return manga
         return None
 
@@ -39,19 +41,31 @@ class MangaParser(object):
     def add_follower_to_manga(manga_title, user):
         """ Adds user to mangas follower list  """
         manga = MangaParser.get_manga_by_title(manga_title)
-        if manga and manga.addFollower(user):
+        if manga and manga.add_follower(user):
             MangaParser.save_to_file()
-            return manga.mangaName
-        return None
+            return True
+        return False
 
     @staticmethod
     def remove_follower_from_manga(manga_title, user):
         """ Removes user from mangas follower list """
         manga = MangaParser.get_manga_by_title(manga_title)
-        if manga and manga.removeFollower(user):
+        if manga and manga.remove_follower(user):
             MangaParser.save_to_file()
-            return manga.mangaName
-        return None
+            return True
+        return False
+
+    @staticmethod
+    def monitor_new_manga(manga_title):
+        """ Add new manga to the monitored mangas """
+        manga = MangaParser.get_manga_by_title(manga_title)
+        if manga is None:
+            new_manga = Manga(manga_title, 0, "nolinkavailable")
+            MangaParser.manga_list.append(new_manga)
+            MangaParser.save_to_file()
+            return True
+
+        return False
 
 """
     FIXME: Reimplement these methods
@@ -79,16 +93,4 @@ class MangaParser(object):
         if ircMessages:
             self.saveToFile()
         return ircMessages
-
-    def createNewManga(self, mangaName):
-        manga = self.getMangaByTitle(mangaName) # FIXME: This wont work here, cant follow Dragon Ball and Dragon Ball Z
-        if manga is None:
-            manga = Manga(mangaName, 0, "nolinkavailable")
-            self.mangaList.append(manga)
-            ircMsgCount = len(self.checkForNewReleases())
-            if ircMsgCount == 0:
-                self.saveToFile()
-            return manga.mangaName
-        else:
-            return None
 """

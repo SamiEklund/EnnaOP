@@ -17,6 +17,7 @@ class Manga(object):
         self.chapter_link = chapter_link
         self.chapter_title = chapter_title
         self.publish_date = published_date
+        self.followers = []
 
     def set_followers(self, followers):
         """ Sets mangas followers """
