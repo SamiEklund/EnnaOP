@@ -1,17 +1,14 @@
-""" Main program module """
-
-# system imports
-import sys
-import time
-import ConfigParser
-
+# -*- coding: utf-8 -*-
 # twisted imports
 from twisted.words.protocols import irc
 from twisted.internet import reactor, protocol, task, defer
 from twisted.python import log
 
+# system imports
+import time, sys, ConfigParser
+
 # custom imports
-from Commands.commandcenter import CommandCenter
+from annaop import Manga, MangaParser, DataSource
 
 class MessageLogger:
     def __init__(self, file):
@@ -29,7 +26,7 @@ class EnnaOP(irc.IRCClient):
     nickname = "Enna_OP"
     channel = "#OnePieceCircleJerk"
 
-    commandCenter = CommandCenter()
+    mangaParser = MangaParser()
 
     commandList = ["subscribe", "unsubscribe", "addmanga"]
 
@@ -41,15 +38,15 @@ class EnnaOP(irc.IRCClient):
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
         self.logger = MessageLogger(open(self.factory.filename, "a"))
-        self.logger.log("[connected at %s]" %
+        self.logger.log("[connected at %s]" % 
                         time.asctime(time.localtime(time.time())))
 
-        monitor_manga = task.LoopingCall(self.BotLoop)
-        monitor_manga.start(60)
+        monitorManga = task.LoopingCall(self.BotLoop)
+        monitorManga.start(60)
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
-        self.logger.log("[disconnected at %s]" %
+        self.logger.log("[disconnected at %s]" % 
                         time.asctime(time.localtime(time.time())))
         self.logger.close()
 
@@ -66,7 +63,7 @@ class EnnaOP(irc.IRCClient):
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
         user = user.split('!', 1)[0]
-
+        
         # Check to see if they're sending me a private message
         if channel == self.nickname:
             msg = "It isn't nice to whisper!  Play nice with the group."
@@ -74,44 +71,75 @@ class EnnaOP(irc.IRCClient):
             return
 
         # Otherwise check to see if it is a message directed at me
-
-        if msg.startswith(CommandCenter.COMMAND_PREFIX):
-            self.names(self.channel).addCallback(self.commands, user, msg)
+        if msg.startswith("!"):
+            # Check if command is valid before bothering the server
+            for cmd in self.commandList:
+                if cmd in msg.lower():
+                    self.names(self.channel).addCallback(self.commands, user, msg)
+                    break
 
     def commands(self, nicklist, user=None, message=None):
         if not user or not message:
             return
 
-        irc_msg = user + ": "
+        message = message.lower()
+        user = user.lower()
+        ircMsg = user + ": "
 
-        user_rank = None
-
+        userRank = None
+        
         # Check if user has OP or voice
         for nick in nicklist:
-            if user.lower() in nick.lower():
+            if user in nick.lower():
                 if nick.startswith("@") or nick.startswith("%"):
-                    user_rank = "O"
+                    userRank = "O"
                 elif nick.startswith("+"):
-                    user_rank = "V"
+                    userRank = "V"
 
-        if not user_rank:
-            irc_msg += "You need to be voiced to interact with me!"
-            self.msg(self.channel, irc_msg.encode("utf8"))
+        if not userRank:
+            ircMsg += "You need to be voiced to interact with me!"
+            self.msg(self.channel, ircMsg.encode("utf8"))
             return
 
-        irc_msg += self.commandCenter.parse_and_execute(user, message)
-        self.msg(self.channel, irc_msg.encode("utf8"))
+        messageParts = message.split(" ")
+        command = messageParts.pop(0)
+        params = " ".join(messageParts)
+
+        if command == "!subscribe":
+            manga = self.mangaParser.subscribe(params, user)
+            if manga:
+                ircMsg += "I will notify you for " + manga + " releases."
+            else:
+                ircMsg += "You are already following this manga or the manga doesn't exist."
+            self.msg(self.channel, ircMsg.encode("utf8"))
+        elif command == "!unsubscribe":
+            manga = self.mangaParser.unsubscribe(params, user)
+            if manga:
+                ircMsg += "You won't get notified for " + manga + " anymore."
+            else:
+                ircMsg += "You aren't following this or the manga doesn't exist."
+            self.msg (self.channel, ircMsg.encode('utf8'))
+        elif command == "!addmanga":
+            if userRank != "O":
+                ircMsg += "You need to be channel operator to user this command.'"
+            else:
+                manga = self.mangaParser.createNewManga(params)
+                if manga:
+                    ircMsg += "I am now following " + manga + "!"
+                else:
+                    ircMsg += "We are already following that manga or some other error!"
+            self.msg (self.channel, ircMsg.encode('utf8'))
+
 
     def names(self, channel):
-        """ Gets list of nicks on the channel """
         channel = channel.lower()
-        promise = defer.Deferred()
+        d = defer.Deferred()
         if channel not in self._namescallback:
             self._namescallback[channel] = ([], [])
 
-        self._namescallback[channel][0].append(promise)
+        self._namescallback[channel][0].append(d)
         self.sendLine("NAMES %s" % channel)
-        return promise
+        return d
 
     def irc_RPL_NAMREPLY(self, prefix, params):
         channel = params[2].lower()
@@ -136,11 +164,14 @@ class EnnaOP(irc.IRCClient):
         del self._namescallback[channel]
 
     def BotLoop(self):
-        # TODO Check for new releases
+        # Check for new releases on MangaStream 
+        releases = self.mangaParser.checkForNewReleases()
 
-        print "Manga checking no longer works"
+        print("I CHECKED MANGAS!!! " + " ".join(releases))
 
-        releases = []
+        # Check for new releases on Pota.to
+
+        # Check for new releases on /r/Manga
 
         for message in releases:
             self.msg("#OnePieceCircleJerk", message.encode('utf8'))
@@ -181,7 +212,7 @@ if __name__ == '__main__':
     server_password = config.get('server', 'password')
 
     log.startLogging(sys.stdout)
-
+    
     f = BotFactory(server_username, server_password)
     reactor.connectTCP(server_ip, server_port, f)
     reactor.run()
