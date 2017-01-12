@@ -43,15 +43,6 @@ class MangaParser(object):
         return None
 
     @staticmethod
-    def remove_follower_from_manga(manga_title, user):
-        """ Removes user from mangas follower list """
-        manga = MangaParser.get_manga_by_title(manga_title)
-        if manga and manga.remove_follower(user):
-            MangaParser.save_to_file()
-            return True
-        return False
-
-    @staticmethod
     def monitor_new_manga(manga_title):
         """ Add new manga to the monitored mangas """
         manga = MangaParser.get_manga_by_title(manga_title)

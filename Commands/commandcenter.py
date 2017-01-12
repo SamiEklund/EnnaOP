@@ -1,14 +1,16 @@
 """Module for handling all commands"""
 
-from command import Command
-from command_subscribe import Subscribe
-from command_addmanga import AddManga
+from Commands.command import Command
+from Commands.command_subscribe import Subscribe
+from Commands.command_unsubscribe import Unsubscribe
+from Commands.command_addmanga import AddManga
 
 class CommandCenter(object):
     """ Master of the commands TODO: Explain better """
 
     commands = [
         Subscribe(),
+        Unsubscribe(),
         AddManga()
     ]
 

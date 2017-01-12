@@ -1,8 +1,7 @@
 """ Module for subscribe command """
 
-from command import Command
+from Commands.command import Command
 from Common.manga_parser import MangaParser
-# from Common.manga import Manga
 
 class Subscribe(Command):
     """ Logic for Subscribe command """
