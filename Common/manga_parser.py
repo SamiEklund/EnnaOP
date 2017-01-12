@@ -33,7 +33,7 @@ class MangaParser(object):
     def get_manga_by_title(manga_title):
         """ Returns manga object by title """
         for manga in MangaParser.manga_list:
-            if manga.manga_name.lower() == manga_title.lower():
+            if manga.name.lower() == manga_title.lower():
                 return manga
         return None
 

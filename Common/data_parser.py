@@ -3,6 +3,7 @@ import re
 import feedparser
 import jsonpickle
 from manga import Manga
+from chapter import Chapter
 
 class DataSource(object):
     """ Data class for handling data source infomation """
@@ -79,12 +80,14 @@ class DataHandler(object):
         except ValueError:
             return None
 
-        if manga_name is None or chapter_link is None or chapter_number is None:
+        if not manga_name or not chapter_link or not chapter_number:
             return None
 
         publish_date = data["publisheddate"] if "publisheddate" in data else None
         chapter_title = data["chaptertitle"] if "chaptertitle" in data else None
 
-        return Manga(manga_name, chapter_number, chapter_link, chapter_title, publish_date)
+        chapter = Chapter(chapter_number, chapter_link, chapter_title, publish_date)
+
+        return Manga(manga_name, chapter)
 
     data_sources = load_data_sources()
