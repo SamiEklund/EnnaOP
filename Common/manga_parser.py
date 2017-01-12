@@ -42,18 +42,6 @@ class MangaParser(object):
                 return manga
         return None
 
-    @staticmethod
-    def monitor_new_manga(manga_title):
-        """ Add new manga to the monitored mangas """
-        manga = MangaParser.get_manga_by_title(manga_title)
-        if manga is None:
-            new_manga = Manga(manga_title)
-            MangaParser.manga_list.append(new_manga)
-            MangaParser.save_to_file()
-            return True
-
-        return False
-
 """
     FIXME: Reimplement these methods
 
