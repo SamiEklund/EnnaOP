@@ -11,11 +11,11 @@ class Manga(object):
     def __init__(self, name, chapter=None, followers=None):
         self.name = name
         self.chapter = chapter
-        if not chapter:
+        if not self.chapter:
             self.chapter = Chapter(0, "No link available!")
         self.followers = followers
-        if not followers:
-            followers = []
+        if not self.followers:
+            self.followers = []
 
     def add_follower(self, user):
         """ Adds user to followers """

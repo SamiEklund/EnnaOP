@@ -4,6 +4,7 @@ import json
 import jsonpickle
 
 from manga import Manga
+from chapter import Chapter
 
 def load_manga_file():
     """ Reads saved status from JSON file """
@@ -38,15 +39,6 @@ class MangaParser(object):
         return None
 
     @staticmethod
-    def add_follower_to_manga(manga_title, user):
-        """ Adds user to mangas follower list  """
-        manga = MangaParser.get_manga_by_title(manga_title)
-        if manga and manga.add_follower(user):
-            MangaParser.save_to_file()
-            return True
-        return False
-
-    @staticmethod
     def remove_follower_from_manga(manga_title, user):
         """ Removes user from mangas follower list """
         manga = MangaParser.get_manga_by_title(manga_title)
@@ -60,7 +52,7 @@ class MangaParser(object):
         """ Add new manga to the monitored mangas """
         manga = MangaParser.get_manga_by_title(manga_title)
         if manga is None:
-            new_manga = Manga(manga_title, 0, "nolinkavailable")
+            new_manga = Manga(manga_title)
             MangaParser.manga_list.append(new_manga)
             MangaParser.save_to_file()
             return True
