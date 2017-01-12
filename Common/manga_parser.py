@@ -3,14 +3,18 @@
 import json
 import jsonpickle
 
-from manga import Manga
-from chapter import Chapter
+from Common.manga import Manga
+from Common.chapter import Chapter
 
 def load_manga_file():
     """ Reads saved status from JSON file """
-    manga_file = open("manga.json", "r")
-    manga_list = jsonpickle.decode(manga_file.read())
-    manga_file.close()
+    try:
+        manga_file = open("manga.json", "r")
+        manga_list = jsonpickle.decode(manga_file.read())
+        manga_file.close()
+    except IOError:
+        manga_list = []
+
     return manga_list
 
 class MangaParser(object):

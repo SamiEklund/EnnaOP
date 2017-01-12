@@ -152,7 +152,7 @@ class BotFactory(protocol.ClientFactory):
     """
 
     def __init__(self, username, password):
-        self.filename = "logfile.txt"
+        self.filename = "logfile.log"
         self.username = username
         self.password = password
 
