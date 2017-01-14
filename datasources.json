@@ -1,9 +1,9 @@
 [
     {
-        "py/object": "__main__.DataSource",
-        "source": "http://mangastream.com/rss",
-        "type": "rss",
-        "dataMap": [
+        "py/object": "Common.data_parser.DataSource",
+        "source_url": "http://mangastream.com/rss",
+        "data_type": "rss",
+        "data_mappings": [
             {
                 "node": "title",
                 "dataname": "manganame",
@@ -37,10 +37,10 @@
         ]
     },
     {
-        "py/object": "__main__.DataSource",
-        "source": "http://bato.to/myfollows_rss?secret=a92c38514f26c17c881ff2d15320d939&l=English",
-        "type": "rss",
-        "dataMap": [
+        "py/object": "Common.data_parser.DataSource",
+        "source_url": "http://bato.to/myfollows_rss?secret=a92c38514f26c17c881ff2d15320d939&l=English",
+        "data_type": "rss",
+        "data_mappings": [
             {
                 "node": "title",
                 "dataname": "manganame",

@@ -42,30 +42,21 @@ class MangaParser(object):
                 return manga
         return None
 
-"""
-    FIXME: Reimplement these methods
+    @staticmethod
+    def check_for_new_releases(release_list):
+        """ Compares release_list to manga_list and updates any new releases """
+        if not release_list:
+            return []
 
-    def checkForNewReleases(self):
-        ircMessages = []
+        new_releases = []
 
-        for source in self.sourceList:
-            newReleases = []
-            releases = source.getManga()
-            if not releases:
-                continue
-            for release in releases:
-                manga = self.getMangaByTitle(release.mangaName)
-                if manga and release.chapterNumber > manga.chapterNumber:
-                    release.setFollowers(manga.followers)
-                    newReleases.append(release)
+        for new_manga in release_list:
+            manga = MangaParser.get_manga_by_title(new_manga.name)
 
-            for release in newReleases:
-                ircMessages.append(release.getMessage())
-                manga = self.getMangaByTitle(release.mangaName)
-                if manga and release.chapterNumber > manga.chapterNumber:
-                    manga.update(release)
-        
-        if ircMessages:
-            self.saveToFile()
-        return ircMessages
-"""
+            if manga and manga.update_chapter(new_manga.chapter):
+                new_releases.append(manga)
+
+        if len(new_releases) > 0:
+            MangaParser.save_to_file()
+
+        return new_releases

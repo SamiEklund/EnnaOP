@@ -16,16 +16,15 @@ class DataSource(object):
         self.data_type = data_type
         self.data_map = data_mappings
 
+def load_data_sources():
+    """ Load DataSources from a JSON file """
+    source_file = open("datasources.json", "r")
+    source_list = jsonpickle.decode(source_file.read())
+    source_file.close()
+    return source_list
+
 class DataHandler(object):
     """ Static class for data fetching and parsing """
-
-    @staticmethod
-    def load_data_sources():
-        """ Load DataSources from a JSON file """
-        source_file = open("datasources.json", "r")
-        source_list = jsonpickle.decode(source_file.read())
-        file.close()
-        return source_list
 
     @staticmethod
     def get_manga_from_rss(data_source):

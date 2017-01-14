@@ -12,6 +12,8 @@ from twisted.python import log
 
 # custom imports
 from Commands.commandcenter import CommandCenter
+from Common.data_parser import DataHandler
+from Common.manga_parser import MangaParser
 
 class MessageLogger:
     def __init__(self, file):
@@ -31,8 +33,6 @@ class EnnaOP(irc.IRCClient):
 
     commandCenter = CommandCenter()
 
-    commandList = ["subscribe", "unsubscribe", "addmanga"]
-
     def __init__(self, username, password):
         self.username = username
         self.password = password
@@ -44,7 +44,7 @@ class EnnaOP(irc.IRCClient):
         self.logger.log("[connected at %s]" %
                         time.asctime(time.localtime(time.time())))
 
-        monitor_manga = task.LoopingCall(self.BotLoop)
+        monitor_manga = task.LoopingCall(self.bot_loop)
         monitor_manga.start(60)
 
     def connectionLost(self, reason):
@@ -135,15 +135,22 @@ class EnnaOP(irc.IRCClient):
 
         del self._namescallback[channel]
 
-    def BotLoop(self):
-        # TODO Check for new releases
+    def bot_loop(self):
+        """ Monitors data sources and reports new finds to irc channel """
 
-        print "Manga checking no longer works"
+        new_releases = []
 
-        releases = []
+        for source in DataHandler.data_sources:
+            print "Checking soruse " + source.source_url
+            if source.data_type == "rss":
+                print "Checking RSS site: " + source.source_url
+                release_list = DataHandler.get_manga_from_rss(source)
+                print "Got the releases! Checking if any new releases!"
+                new_releases += MangaParser.check_for_new_releases(release_list)
+                print "Checked the releases! So far " + str(len(new_releases)) + " new releases!"
 
-        for message in releases:
-            self.msg("#OnePieceCircleJerk", message.encode('utf8'))
+        for release in new_releases:
+            self.msg("#OnePieceCircleJerk", release.get_release_message().encode('utf8'))
 
 class BotFactory(protocol.ClientFactory):
     """

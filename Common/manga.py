@@ -1,6 +1,6 @@
 """ Manga package """
 
-from chapter import Chapter
+from Common.chapter import Chapter
 
 class Manga(object):
     """ Class for manga information """
@@ -42,3 +42,5 @@ class Manga(object):
         """ Update chapter information based on manga object """
         if self.chapter.is_new_release(chapter):
             self.chapter = chapter
+            return True
+        return False
