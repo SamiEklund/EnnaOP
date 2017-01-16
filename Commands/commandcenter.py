@@ -1,9 +1,9 @@
 """Module for handling all commands"""
 
-from Commands.command import Command
 from Commands.command_subscribe import Subscribe
 from Commands.command_unsubscribe import Unsubscribe
 from Commands.command_addmanga import AddManga
+from Common.logger import Logger
 
 class CommandCenter(object):
     """ Master of the commands TODO: Explain better """
@@ -20,13 +20,14 @@ class CommandCenter(object):
     def parse_and_execute(self, user, message):
         """ Parses the command string and parameters from given message and executes it """
         if not message.startswith(self.COMMAND_PREFIX):
-            return False
+            return ""
+
+        Logger.log("Valid command was given! User: %s Command: %s" % (user, message))
         command = self.parse_command(message)
-        print "Command was given: " + command
         parameters = self.parse_parameters(message)
 
         if not command or len(parameters) is 0:
-            return "StupidUserError"
+            return ""
 
         return self.execute_command(command, user, parameters)
 

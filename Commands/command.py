@@ -6,8 +6,10 @@ class Command(object):
     commandStrings = ["undefined"]
 
     def execute(self, user, params):
-        """ Logic for command
-            This method should be overriden in child class """
+        """
+            Logic for command
+            This method should be overriden in child classmethod
+        """
         raise NotImplementedError
 
     def match_command(self, cmd):
