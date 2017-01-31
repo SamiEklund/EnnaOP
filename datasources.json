@@ -51,7 +51,7 @@
                 "node": "title",
                 "dataname": "chapternumber",
                 "method": "regex",
-                "regex": "(?<=(Ch.))[^:]*(?=:)"
+                "regex": "(?<=(Ch.))[^:|\\s]*(?=:|\\s)"
             },
             {
                 "node": "link",
@@ -70,6 +70,43 @@
                 "dataname": "chaptertitle",
                 "method": "regex",
                 "regex": "(?<=(:)).*$"
+            }
+        ]
+    },
+    {
+        "py/object": "Common.data_parser.DataSource",
+        "source_url": "https://jaiminisbox.com/reader/rss.xml",
+        "data_type": "rss",
+        "data_mappings": [
+            {
+                "node": "title",
+                "dataname": "manganame",
+                "method": "regex",
+                "regex": "^.+?(?=\\sChapter|\\sVol)"
+            },
+            {
+                "node": "title",
+                "dataname": "chapternumber",
+                "method": "regex",
+                "regex": "(\\d+)(?=:)"
+            },
+            {
+                "node": "link",
+                "dataname": "chapterlink",
+                "method": "regex",
+                "regex": ".*"
+            },
+            {
+                "node": "published",
+                "dataname": "publishedtime",
+                "method": "regex",
+                "regex": ".*"
+            },
+            {
+                "node": "title",
+                "dataname": "chaptertitle",
+                "method": "regex",
+                "regex": "(?<=(\\d:\\s)).*$"
             }
         ]
     }
