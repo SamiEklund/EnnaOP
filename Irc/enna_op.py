@@ -136,7 +136,7 @@ class EnnaOP(irc.IRCClient):
                 release_list = DataHandler.get_manga_from_rss(source)
                 Logger.log("Got the releases! Checking if any new releases!")
                 new_releases += MangaParser.check_for_new_releases(release_list)
-                Logger.log("Checked the releases! So far " + str(len(new_releases)) %
+                Logger.log("Checked the releases! So far " + str(len(new_releases)) +
                            " new releases!")
 
         for release in new_releases:
