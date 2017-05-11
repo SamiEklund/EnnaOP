@@ -96,3 +96,4 @@ ENV/
 # Manga.json
 manga.json
 conf.config
+logs

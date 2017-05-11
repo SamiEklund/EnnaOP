@@ -33,7 +33,12 @@ class Manga(object):
 
     def get_release_message(self):
         """ Returns message with release information """
-        release_message = self.name + " " + str(self.chapter.number) + " is out!"
+        if self.chapter.number.is_integer():
+            chapter_number = int(self.chapter.number)
+        else:
+            chapter_number = self.chapter.number
+
+        release_message = self.name + " " + str(chapter_number) + " is out!"
         release_message += " " + " ".join(self.followers)
         release_message += "\n" + self.chapter.link
         return  release_message
